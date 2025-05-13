@@ -26,15 +26,39 @@ const heroImages = [
 
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [api, setApi] = useState(null);
 
   // Auto-advance slides every 5 seconds
   useEffect(() => {
+    if (!api) return;
+    
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+      api.scrollNext();
     }, 5000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [api]);
+
+  useEffect(() => {
+    if (!api) return;
+    
+    api.scrollTo(currentSlide);
+  }, [api, currentSlide]);
+
+  const handleSelect = React.useCallback(() => {
+    if (!api) return;
+    setCurrentSlide(api.selectedScrollSnap());
+  }, [api]);
+
+  useEffect(() => {
+    if (!api) return;
+    
+    api.on('select', handleSelect);
+    // Cleanup
+    return () => {
+      api.off('select', handleSelect);
+    };
+  }, [api, handleSelect]);
 
   return (
     <section id="home" className="relative h-screen flex items-center">
@@ -43,14 +67,7 @@ const Hero = () => {
         <Carousel 
           className="w-full h-full" 
           opts={{ loop: true }}
-          selectedIndex={currentSlide}
-          setApi={(api) => {
-            if (api) {
-              api.on('select', () => {
-                setCurrentSlide(api.selectedScrollSnap());
-              });
-            }
-          }}
+          setApi={setApi}
         >
           <CarouselContent className="h-full">
             {heroImages.map((image, index) => (
